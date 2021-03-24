@@ -49,7 +49,6 @@ int genbuf(void* outbuf)
 			idx = rand() % 0xff;
 			//printf("Writing: %02hhx\n", idx);
 			*((uint8_t*)(outbuf)+written) = (unsigned char)idx;
-			//*((char*)(outbuf+written)) = (unsigned char) idx;
 			written++;
 			break;
 		case 2:
