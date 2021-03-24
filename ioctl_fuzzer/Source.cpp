@@ -157,6 +157,7 @@ int wmain(int argc, wchar_t* argv[])
 		random_number = (rand() % (i + 1));
 		memset(buffer, 0, MAX_BUF_SIZE);
 		ioctl_test_code = ioctl_code_array[random_number];
+		printf("Testing %x\n", ioctl_test_code);
 		int size = genbuf(buffer);
 		bool result = DeviceIoControl(hDriver,
 			ioctl_test_code,
