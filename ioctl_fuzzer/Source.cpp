@@ -29,12 +29,13 @@ int genbuf(void* outbuf)
 {
 	int choice;
 	int written = 0;
-	int length = (rand() % MAX_BUF_SIZE-12)+4;
-	 
+	int length = (rand() % (MAX_BUF_SIZE-12));
+	printf("== Generating Size: %d", length);
 	choice = (rand() % 8);
 	int idx = 0;
 	while (written < length)
 	{
+		printf("Written so far: %d; Choice: %d\n ", written, choice);
 		switch (choice)
 		{
 		case 0:
@@ -94,9 +95,8 @@ int genbuf(void* outbuf)
 			written += 8;
 			break;
 		}
+		choice = (rand() % 8);
 	}
-
-
 	return length;
 }
 
@@ -124,7 +124,7 @@ int wmain(int argc, wchar_t* argv[])
 	int i = 0;
 	while (iwc != NULL) {
 		swscanf_s(iwc, L"%lX", &ioctl_code_array[i]);
-		printf("%x\n", ioctl_code_array[i]);
+		printf("0x%x\n", ioctl_code_array[i]);
 		iwc = wcstok_s(NULL, L",", &pt);
 		i++;
 	}
@@ -160,7 +160,7 @@ int wmain(int argc, wchar_t* argv[])
 		memset(buffer, 0, MAX_BUF_SIZE);
 		ioctl_test_code = ioctl_code_array[random_number];
 		int size = genbuf(buffer);
-		printf("Size: %d", size);
+		printf("Size: %d, IoCTL: %x\n", size, ioctl_test_code);
 		bool result = DeviceIoControl(hDriver,
 			ioctl_test_code,
 			buffer,
@@ -169,7 +169,10 @@ int wmain(int argc, wchar_t* argv[])
 			2048,
 			&returned,
 			NULL);
-
+		if (result == false)
+		{
+			printf("Error!\n");
+		}
 		if (tests_executed % 1000 == 0) {
 			printf(".");
 		}
