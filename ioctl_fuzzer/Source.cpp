@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <ctime>
 #include <stdint.h>
-#define MAX_BUF_SIZE 200
+#define MAX_BUF_SIZE 1024
 
 uint8_t MAGIC_FUCK_YOU_NUMBERS_8[] = { 0x00, 0xff, 0x7f, 0x1 };
 uint16_t MAGIC_FUCK_YOU_NUMBERS_16[] = { 0x00, 0xffff, 0x7fff, 0x1 };
@@ -29,7 +29,7 @@ int genbuf(void* outbuf)
 {
 	int choice;
 	int written = 0;
-	int length = (rand() % MAX_BUF_SIZE-4)+4;
+	int length = (rand() % MAX_BUF_SIZE-12)+4;
 	 
 	choice = (rand() % 8);
 	int idx = 0;
@@ -148,16 +148,19 @@ int wmain(int argc, wchar_t* argv[])
 	// Fuzz loop ayay!
 	int ioctl_test_code;
 	int random_number;
+
+	int tests_executed = 0;
+
 	void* buffer = malloc(MAX_BUF_SIZE);
 	void* outbuf = malloc(2048);
 	DWORD returned = 0;
 
 	while (true) {
-		random_number = (rand() % (i + 1));
+		random_number = (rand() % (i));
 		memset(buffer, 0, MAX_BUF_SIZE);
 		ioctl_test_code = ioctl_code_array[random_number];
-		printf("Testing %x\n", ioctl_test_code);
 		int size = genbuf(buffer);
+		printf("Size: %d", size);
 		bool result = DeviceIoControl(hDriver,
 			ioctl_test_code,
 			buffer,
@@ -166,6 +169,11 @@ int wmain(int argc, wchar_t* argv[])
 			2048,
 			&returned,
 			NULL);
+
+		if (tests_executed % 1000 == 0) {
+			printf(".");
+		}
+		tests_executed++;
 	}
 
 CLEANUP:
