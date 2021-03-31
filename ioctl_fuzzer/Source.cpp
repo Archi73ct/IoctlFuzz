@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <ctime>
 #include <stdint.h>
-#define MAX_BUF_SIZE 1024
+#define MAX_BUF_SIZE 256
 
 uint8_t MAGIC_FUCK_YOU_NUMBERS_8[] = { 0x00, 0xff, 0x7f, 0x1 };
 uint16_t MAGIC_FUCK_YOU_NUMBERS_16[] = { 0x00, 0xffff, 0x7fff, 0x1 };
@@ -21,6 +21,20 @@ void dumpbuf(void* buf, int size)
 	printf("]\n");
 }
 
+/* For some reason theres no unistd.h here... */
+void usleep(__int64 usec)
+{
+	HANDLE timer;
+	LARGE_INTEGER ft;
+
+	ft.QuadPart = -(10 * usec); // Convert to 100 nanosecond interval, negative value indicates relative time
+
+	timer = CreateWaitableTimer(NULL, TRUE, NULL);
+	SetWaitableTimer(timer, &ft, 0, NULL, NULL, 0);
+	WaitForSingleObject(timer, INFINITE);
+	CloseHandle(timer);
+}
+
 /*
 	This will generate a random buffer, to be stored in outbuf
 	it returns the length of the randomly generated buffer.
@@ -29,11 +43,11 @@ int genbuf(void* outbuf)
 {
 	int choice;
 	int written = 0;
-	int length = (rand() % (MAX_BUF_SIZE-12));
+	int length = (rand() % (MAX_BUF_SIZE));
 	printf("== Generating Size: %d", length);
 	choice = (rand() % 8);
-	int idx = 0;
-	while (written < length)
+	uint64_t idx = 0;
+	while (written < (length-12))
 	{
 		printf("Written so far: %d; Choice: %d\n ", written, choice);
 		switch (choice)
@@ -83,14 +97,14 @@ int genbuf(void* outbuf)
 		case 6:
 			// Write magic long
 			idx = rand() % (sizeof(MAGIC_FUCK_YOU_NUMBERS_64) / sizeof(uint64_t));
-			//printf("Writing11: %lx\n", MAGIC_FUCK_YOU_NUMBERS_64[idx]);
-			*((uint32_t*)(outbuf)+written) = MAGIC_FUCK_YOU_NUMBERS_64[idx];
+			printf("Writing: %llx\n", MAGIC_FUCK_YOU_NUMBERS_64[idx]);
+			*((uint64_t*)(outbuf)+written) = MAGIC_FUCK_YOU_NUMBERS_64[idx];
 			written += 8;
 			break;
 		case 7:
 			// Write random long
-			idx = rand() % 0xffffffffffffffff;
-			//printf("Writing: %lx\n", idx);
+			idx = ((uint64_t)rand()<<32)+rand();
+			printf("Writing: %llx\n", idx);
 			*((uint64_t*)(outbuf)+written) = (uint64_t)idx;
 			written += 8;
 			break;
@@ -154,24 +168,29 @@ int wmain(int argc, wchar_t* argv[])
 	void* buffer = malloc(MAX_BUF_SIZE);
 	void* outbuf = malloc(2048);
 	DWORD returned = 0;
-
+	int size;
 	while (true) {
 		random_number = (rand() % (i));
-		memset(buffer, 0, MAX_BUF_SIZE);
 		ioctl_test_code = ioctl_code_array[random_number];
-		int size = genbuf(buffer);
-		printf("Size: %d, IoCTL: %x\n", size, ioctl_test_code);
-		bool result = DeviceIoControl(hDriver,
-			ioctl_test_code,
-			buffer,
-			size,
-			outbuf,
-			2048,
-			&returned,
-			NULL);
-		if (result == false)
-		{
-			printf("Error!\n");
+		memset(buffer, 0, MAX_BUF_SIZE);
+		try {
+			size = genbuf(buffer);
+			printf("Size: %d, IoCTL: %x\n", size, ioctl_test_code);
+			bool result = DeviceIoControl(hDriver,
+				ioctl_test_code,
+				buffer,
+				size,
+				outbuf,
+				2048,
+				&returned,
+				NULL);
+			if (result == false)
+			{
+				printf("Error!\n");
+			}
+		}
+		catch (int e) {
+			printf("Error %x occured\n", e);
 		}
 		if (tests_executed % 1000 == 0) {
 			printf(".");
