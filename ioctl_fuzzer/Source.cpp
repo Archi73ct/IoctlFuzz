@@ -44,12 +44,10 @@ int genbuf(void* outbuf)
 	int choice;
 	int written = 0;
 	int length = (rand() % (MAX_BUF_SIZE));
-	printf("== Generating Size: %d", length);
 	choice = (rand() % 8);
 	uint64_t idx = 0;
 	while (written < (length-12))
 	{
-		printf("Written so far: %d; Choice: %d\n ", written, choice);
 		switch (choice)
 		{
 		case 0:
@@ -97,14 +95,12 @@ int genbuf(void* outbuf)
 		case 6:
 			// Write magic long
 			idx = rand() % (sizeof(MAGIC_FUCK_YOU_NUMBERS_64) / sizeof(uint64_t));
-			printf("Writing: %llx\n", MAGIC_FUCK_YOU_NUMBERS_64[idx]);
 			*((uint64_t*)(outbuf)+written) = MAGIC_FUCK_YOU_NUMBERS_64[idx];
 			written += 8;
 			break;
 		case 7:
 			// Write random long
 			idx = ((uint64_t)rand()<<32)+rand();
-			printf("Writing: %llx\n", idx);
 			*((uint64_t*)(outbuf)+written) = (uint64_t)idx;
 			written += 8;
 			break;
@@ -175,7 +171,6 @@ int wmain(int argc, wchar_t* argv[])
 		memset(buffer, 0, MAX_BUF_SIZE);
 		try {
 			size = genbuf(buffer);
-			printf("Size: %d, IoCTL: %x\n", size, ioctl_test_code);
 			bool result = DeviceIoControl(hDriver,
 				ioctl_test_code,
 				buffer,
@@ -184,10 +179,6 @@ int wmain(int argc, wchar_t* argv[])
 				2048,
 				&returned,
 				NULL);
-			if (result == false)
-			{
-				printf("Error!\n");
-			}
 		}
 		catch (int e) {
 			printf("Error %x occured\n", e);
